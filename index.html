@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Draftsman</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+    <script type="text/javascript">
+        var API_KEY = '';   /* Google API key: Pass as 'key' GET param */
+        var SHEET_ID = '';  /* Google sheet ID: Pass as 'sheet' GET param */
+        var MAX_TAPS = 20;  /* Max number of taps that fit without scrolling */
+
+        /*
+         * Scale beer name and style to fit into allowed space while preserving
+         * the font size ratio between the two items.
+         */
+        function scale_fonts() {
+            $( ".auto-scaled" ).each(function(i, div) {
+                var avail_width = div.clientWidth;
+                var name = $(div).find( ".beer-name" )[0];
+                var name_font_size = parseFloat(window.getComputedStyle(name, null)
+                    .getPropertyValue("font-size"));
+                var style = $(div).find( ".beer-style" )[0];
+                var style_font_size = parseFloat(window.getComputedStyle(style, null)
+                    .getPropertyValue("font-size"));
+
+                var name_share = name.offsetWidth / (name.offsetWidth + style.offsetWidth);
+                var style_share = 1 - name_share;
+                var orig_width = name.offsetWidth + style.offsetWidth;
+                var new_name_size = Math.min(name_font_size,
+                                             name_font_size * (name_share * avail_width) / name.offsetWidth);
+                var new_style_size = Math.min(style_font_size,
+                                             style_font_size * (style_share * avail_width) / style.offsetWidth);
+                name.style.fontSize = new_name_size + "px";
+                style.style.fontSize = new_style_size + "px";
+            });
+        }
+
+        function display_beers(beers) {
+            /* Remove all current taps */
+            $( ".tap-container" ).remove();
+
+            /* Count the number of beers that will be shown */
+            var display_tot = 0;
+            for (i=0; i < beers.length; i++)
+                if (beers[i].state != "off")
+                    display_tot++;
+            if (display_tot > MAX_TAPS) {
+                display_message("Too many taps to display");
+            }
+
+            var beer_nr = 0;
+            for (i=0; i < beers.length; i++) {
+                beer = beers[i];
+
+                /* Skip beers that are not on tap */
+                if ("state" in beer && beer.state == "off") {
+                    continue;
+                }
+
+                beer_nr++;
+                var elements = $( "#tap-template" ).clone()
+                    .addClass("tap-container");
+                elements.removeAttr("id").removeAttr("style");
+
+                /*
+                 * Add tap nr and style middle border.  We would like column
+                 * numbering even though the taps are added in rows.
+                 */
+                if (beer_nr % 2 == 1) {
+                    display_nr = Math.floor((beer_nr + 1) / 2);
+                    $( "#center-line" ).clone()
+                        .removeAttr("style")
+                        .appendTo(elements);
+                } else {
+                    display_nr = Math.floor((display_tot + 1) / 2) +
+                        Math.floor(beer_nr / 2);
+                }
+
+                /* Fill in the details */
+                elements.find( ".beer-nr" ).html(display_nr);
+                elements.find( ".beer-glass" )
+                    .addClass(beer.color)
+                    .attr("src", "images/glass-" + beer.glass + ".png");
+                elements.find( ".beer-name" ).html(beer.name);
+                elements.find( ".beer-style" ).html(beer.style);
+
+                /* Coming soon beers are shaded and lack prices or ABV */
+                if ("state" in beer && beer.state == "soon") {
+                    $( "#soon" ).clone()
+                        .removeAttr("id").removeAttr("style")
+                        .appendTo( elements );
+                } else {
+                    elements.find( ".beer-abv" ).html(beer.abv + "%");
+                    elements.find( ".beer-price" ).html("$" + beer.price);
+                    elements.find( ".beer-price-taste" ).html("$" + beer.price_taste);
+                }
+
+                /* Cross out beers that have kicked */
+                if ("state" in beer && beer.state == "gone") {
+                    elements.addClass("gone");
+                }
+
+                elements.appendTo( "#tap-area" );
+            }
+            scale_fonts();
+        }
+
+        function get_url_parameter(param_name) {
+            var param_str = window.location.search.substring(1);
+            var vars_str = param_str.split('&');
+            for (var i = 0; i < vars_str.length; i++) {
+                var name_and_val = vars_str[i].split('=');
+                if (name_and_val[0] == param_name) {
+                    return name_and_val[1];
+                }
+            }
+        }
+
+        /*
+         * Load the beers from a Google Sheet into a json array
+         */
+        function load_beers() {
+            $( "#output" ).hide();
+
+            gapi.client.sheets.spreadsheets.values.get({
+                spreadsheetId: SHEET_ID,
+                range: 'A2:I',
+            }).then(function(response) {
+                var beers = [];
+                var range = response.result;
+                if (range.values.length > 0) {
+                    /* DEBUG:
+                     * display_message('Name, Style:');
+                     */
+                    for (i = 0; i < range.values.length; i++) {
+                        var row = range.values[i];
+                        beers.push({
+                            state: row[0],
+                            name: row[1],
+                            style: row[3],
+                            abv: row[4],
+                            price: row[5],
+                            price_taste: row[6],
+                            color: row[7],
+                            glass: row[8]});
+                        /* DEBUG:
+                         * display_message(row[1] + ', ' + row[2]);
+                         */
+                    }
+                    display_beers(beers);
+                } else {
+                    display_message('No data found.');
+                }
+            }, function(response) {
+                display_message('Error: ' + response.result.error.message);
+            });
+
+            setTimeout(load_beers, 30000);
+        }
+
+        /**
+         * Load Sheets API client library.
+         */
+        function load_sheets_api() {
+            API_KEY = get_url_parameter('key');
+            SHEET_ID = get_url_parameter('sheet');
+            var discoveryUrl =
+                'https://sheets.googleapis.com/$discovery/rest?version=v4';
+            gapi.client.load(discoveryUrl).then(function (){
+                gapi.client.setApiKey(API_KEY);
+                $(document).ready(load_beers);
+            });
+        }
+
+        /*
+         * Append a pre element to the body containing the given message
+         * as its text node.
+         *
+         * @param {string} message Text to be placed in pre element.
+         */
+        function display_message(message) {
+            var pre = document.getElementById('output');
+            var textContent = document.createTextNode(message + '\n');
+            pre.appendChild(textContent);
+            $(pre).show();
+        }
+
+    </script>
+    <script src="https://apis.google.com/js/client.js?onload=load_sheets_api"></script>
+    <link rel="stylesheet" type="text/css" media="screen" href="css/draftsman.css" />
+</head>
+
+<body>
+<pre id="output" style="display:none;"></pre>
+<div id="tap-area" class="row content"></div>
+</body>
+
+<div id="tap-template" style="display: none">
+    <span class="beer-nr"></span>
+    <img class="beer-glass" src="images/glass-snifter.png" />
+    <div class="beer-desc auto-scaled">
+        <span class="beer-name"></span>
+        <span class="beer-style"></span>
+    </div>
+    <span class="beer-abv"></span>
+    <span class="beer-price"></span>/<span class="beer-price-taste"></span>
+</div>
+
+<div id="soon" class="soon" style="display: none"></div>
+<div id="center-line" class="center-line" style="display: none"></div>
+
+</html>
