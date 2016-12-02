@@ -121,7 +121,7 @@
          * Load the beers from a Google Sheet into a json array
          */
         function load_beers() {
-            $( "#output" ).hide();
+            $( "#output" ).hide().html('');
 
             gapi.client.sheets.spreadsheets.values.get({
                 spreadsheetId: SHEET_ID,
