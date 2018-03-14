@@ -68,8 +68,9 @@ html, body {
 }
 
 .beer-glass {
-    height: 60%;
+    height: 40%;
     width: auto;
+    margin: 0em 1em 0em 1em;
 }
 
 .srm-01 {
@@ -226,7 +227,7 @@ div .soon {
 div .gone div:after {
     content: " ";
     position: absolute;
-    top: 50%;
+    top: 37.5%;
     left: 2%;
     border-bottom: 5px solid #4c4c4c;
     width: 96%;

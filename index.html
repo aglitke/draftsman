@@ -36,6 +36,21 @@
             });
         }
 
+        /*
+         * Resort the beers so that they will display 1-6 in the first column and 7-12 in the second.
+         */
+        function sort_beers(beers) {
+            var sorted_beers = [];
+            var nr_first_col = Math.floor((beers.length + 1) / 2);
+            for (i=0; i < nr_first_col; i++) {
+                sorted_beers.push(beers[i]);
+                if (sorted_beers.length < beers.length) {
+                    sorted_beers.push(beers[i + nr_first_col]);
+                }
+            }
+            return sorted_beers;
+        }
+
         function display_beers(beers) {
             /* Remove all current taps */
             $( ".tap-container" ).remove();
@@ -139,6 +154,9 @@
                      */
                     for (i = 0; i < range.values.length; i++) {
                         var row = range.values[i];
+                        if (row[0] == "off") {
+                            continue;
+                        }
                         beers.push({
                             state: row[0],
                             name: row[1],
@@ -153,6 +171,7 @@
                          * display_message(row[1] + ', ' + row[2]);
                          */
                     }
+                    beers = sort_beers(beers);
                     display_beers(beers);
                 } else {
                     display_message('No data found.');
