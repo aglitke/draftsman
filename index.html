@@ -8,7 +8,7 @@
     <script type="text/javascript">
         var API_KEY = '';   /* Google API key: Pass as 'key' GET param */
         var SHEET_ID = '';  /* Google sheet ID: Pass as 'sheet' GET param */
-        var MAX_TAPS = 20;  /* Max number of taps that fit without scrolling */
+        var MAX_TAPS = 12;  /* Max number of taps that fit without scrolling */
 
         /*
          * Scale beer name and style to fit into allowed space while preserving
@@ -83,6 +83,9 @@
                     .addClass(beer.color)
                     .attr("src", "images/glass-" + beer.glass + ".png");
                 elements.find( ".beer-name" ).html(beer.name);
+                if (beer.brewery == "guest") {
+                  elements.find( ".beer-name" ).addClass("beer-name-guest");
+                }
                 elements.find( ".beer-style" ).html(beer.style);
 
                 /* Coming soon beers are shaded and lack prices or ABV */
@@ -112,7 +115,8 @@
             for (var i = 0; i < vars_str.length; i++) {
                 var name_and_val = vars_str[i].split('=');
                 if (name_and_val[0] == param_name) {
-                    return name_and_val[1];
+                    var val_and_trailing = name_and_val[1].split('/');
+                    return val_and_trailing[0];
                 }
             }
         }
@@ -138,6 +142,7 @@
                         beers.push({
                             state: row[0],
                             name: row[1],
+                            brewery: row[2],
                             style: row[3],
                             abv: row[4],
                             price: row[5],
@@ -164,6 +169,7 @@
          */
         function load_sheets_api() {
             API_KEY = get_url_parameter('key');
+            /*API_KEY = 'AIzaSyDI40eCPZEr8j5If2kZRSkiIrJnlwtYuQ8';*/
             SHEET_ID = get_url_parameter('sheet');
             var discoveryUrl =
                 'https://sheets.googleapis.com/$discovery/rest?version=v4';
@@ -199,12 +205,21 @@
 <div id="tap-template" style="display: none">
     <span class="beer-nr"></span>
     <img class="beer-glass" src="images/glass-snifter.png" />
-    <div class="beer-desc auto-scaled">
-        <span class="beer-name"></span>
+    <div class="beer-desc">
+        <div class="beer-stats">
+            <span class="beer-name"></span>
+            <span class="beer-price"></span>
+            <span class="beer-abv"></span>
+        </div>
         <span class="beer-style"></span>
     </div>
-    <span class="beer-abv"></span>
-    <span class="beer-price"></span>/<span class="beer-price-taste"></span>
+
+    <!--<div class="beer-desc auto-scaled">-->
+        <!--<span class="beer-name"></span>-->
+        <!--<span class="beer-style"></span>-->
+    <!--</div>-->
+    <!--<span class="beer-abv"></span>-->
+    <!--<span class="beer-price"></span>/<span class="beer-price-taste"></span>-->
 </div>
 
 <div id="soon" class="soon" style="display: none"></div>

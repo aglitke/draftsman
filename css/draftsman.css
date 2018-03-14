@@ -47,7 +47,7 @@ html, body {
     display: flex;
     align-items: center;
     width: 48%;
-    height: 10%;
+    height: 16.6%;
     padding-left: 1%;
     padding-right: 1%;
 }
@@ -68,7 +68,7 @@ html, body {
 }
 
 .beer-glass {
-    height: 80%;
+    height: 60%;
     width: auto;
 }
 
@@ -153,8 +153,12 @@ html, body {
 }
 
 .beer-desc {
+    width: 100%;
+    word-wrap: break-word;
+}
+
+.beer-stats {
     white-space: nowrap;
-    min-width: 25%;
 }
 
 .beer-name {
@@ -162,13 +166,36 @@ html, body {
     color: #82b51c;
 }
 
-.beer-style {
-    margin-left: 0.5em;
-    font-size: 1.5em;
-    color: #999999;
+.beer-name-guest {
+    font-size: 2.5em;
+    color: #9a4e2e;
 }
 
 .beer-abv {
+    float: right;
+    line-height: 2.5em;
+    text-align: right;
+    font-size: 1.5em;
+    padding-left: 1.5em;
+}
+
+.beer-price {
+    float: right;
+    line-height: 2.5em;
+    font-size: 1.5em;
+    padding-left: 1.5em;
+    min-width: 10%;
+}
+
+
+.beer-style {
+    font-size: 1.3em;
+    color: #999999;
+    min-height: 50%;
+}
+
+
+/*.beer-abv {
     display: block;
     font-size: 1.5em;
     margin-left: auto;
@@ -179,7 +206,7 @@ html, body {
     display: block;
     font-size: 1.5em;
     padding-left: 0.5em;
-}
+}*/
 
 .beer-price-taste {
     display: block;
